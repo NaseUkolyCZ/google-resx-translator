@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using System.Data;
 using System.Collections;
 using System.IO;
+using System.Net;
 
 
 namespace HttpUtils
@@ -37,9 +38,35 @@ namespace HttpUtils
 
 	public class TranslateUtil
 	{
-		private TranslateUtil()
+        static TranslateUtil _instance;
+        Microsoft.TranslatorContainer translatorContainer;
+
+        private TranslateUtil()
 		{
-		}
+            string rootUri = "https://api.datamarket.azure.com/Bing/MicrosoftTranslator/";
+            translatorContainer = new Microsoft.TranslatorContainer(new Uri(rootUri));
+
+            var accountKey = "YourAccountKey";
+            translatorContainer.Credentials = new NetworkCredential(accountKey, accountKey);
+        }
+
+        public static TranslateUtil Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    lock (typeof(TranslateUtil))
+                    {
+                        if (_instance == null)
+                        {
+                            _instance = new TranslateUtil();
+                        }
+                    }
+                }
+                return _instance;
+            }
+        }
 
 		public static ArrayList  GetLangPairs()
 		{
@@ -52,80 +79,88 @@ namespace HttpUtils
 		}
 		
 		public static string GetTranslatedText(string textToTranslate , LangPair langPair)
-		{		
-			string strLangPair=String.Empty ;
+		{
+            string from = string.Empty;
+            string to = string.Empty;
+            string strLangPair = string.Empty;
 
 			switch(langPair)
 			{
 				case (LangPair.ChineseSimplifiedToEnglish):
-					strLangPair = "zh-CN%7Cen";
+					strLangPair = "zh-CN|en";
 					break;
 				case (LangPair.EnglishToChineseSimplified):
-					strLangPair = "en%7Czh-CN";
+					strLangPair = "en|zh-CN";
 					break;
 				case (LangPair.EnglishToFrench):
-					strLangPair = "en%7Cfr";
+					strLangPair = "en|fr";
 					break;
                 case (LangPair.EnglishToGerman):
-					strLangPair = "en%7Cde";
+					strLangPair = "en|de";
 					break;
 				case (LangPair.EnglishToItalian):
-					strLangPair = "en%7Cit";
+					strLangPair = "en|it";
 					break;
 				case (LangPair.EnglishToJapanese):
-					strLangPair = "en%7Cja";
+					strLangPair = "en|ja";
 					break;
 				case (LangPair.EnglishToKorean):
-					strLangPair = "en%7Cko";
+					strLangPair = "en|ko";
 					break;
 				case (LangPair.EnglishToPortuguese):
-					strLangPair = "en%7Cpt";
+					strLangPair = "en|pt";
 					break;
 				case (LangPair.EnglishToSpanish):
-					strLangPair = "en%7Ces";
+					strLangPair = "en|es";
 					break;
 				case (LangPair.FrenchToEnglish):
-					strLangPair = "fr%7Cen";
+					strLangPair = "fr|en";
 					break;
 				case (LangPair.FrenchToGerman):
-					strLangPair = "fr%7Cde";
+					strLangPair = "fr|de";
 					break;
 				case (LangPair.GermanToEnglish):
-					strLangPair = "de%7Cen";
+					strLangPair = "de|en";
 					break;
 				case (LangPair.GermanToFrench):
-					strLangPair = "de%7Cfr";
+					strLangPair = "de|fr";
 					break;
 				case (LangPair.ItalianToEnglish):
-					strLangPair = "it%7Cen";
+					strLangPair = "it|en";
 					break;
 				case (LangPair.JapaneseToEnglish):
-					strLangPair = "ja%7Cen";
+					strLangPair = "ja|en";
 					break;
 				case (LangPair.KoreanToEnglish):
-					strLangPair = "ko%7Cen";
+					strLangPair = "ko|en";
 					break;
 				case (LangPair.PortugueseToEnglish):
-					strLangPair ="pt%7Cen";
+					strLangPair ="pt|en";
 					break;
 				case (LangPair.SpanishToEnglish):
-					strLangPair = "es%7Cen";
+					strLangPair = "es|en";
 					break;
                 case (LangPair.EnglishToCzech):
-                    strLangPair = "en%7Ccz";
+                    strLangPair = "en|cz";
                     break;
 				default:
-					strLangPair="en%7Cde";
+					strLangPair="en|de";
 					break;
 			}
 
-			WebWagon.HTMLPage ww = new WebWagon.HTMLPage();
-			ww.LoadSource("http://translate.google.com/translate_t?text=" +textToTranslate+"&langpair=" +strLangPair);		 
-			
-			string[] stuff=	ww.GetTagsByName("div");
-			Regex findData = new Regex(@"<(?<tag>.*).*>(?<text>.*)</\k<tag>>");
-			Match foundData = findData.Match(stuff[0]);
-			return foundData.Groups["text"].Value ;
+            string[] strLangPairs = strLangPair.Split('|');
+            from = strLangPairs[0];
+            to = strLangPairs[1];
+
+            var imageQuery = Instance.translatorContainer.Translate(textToTranslate, to, from);
+            var imageResults = imageQuery.Execute();
+
+            foreach (var result in imageResults)
+            {
+                return result.Text;
+            }
+
+            return string.Empty;
 		}
 	}
 }

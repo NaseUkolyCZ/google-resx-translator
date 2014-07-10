@@ -4,7 +4,6 @@ using System.Collections;
 using System.ComponentModel;
 using System.Windows.Forms;
 using System.Data;
-using WebWagon;
 using HttpUtils;
 using System.Resources;
 using System.IO;
@@ -276,9 +275,9 @@ namespace ResxTranslator
 		{
 			string fileName = this.resxFileName.Text;
 			string outputFileName = this.outputFileName.Text;
-			if(fileName.Length == 0 || outputFileName.Length == 0)
+            if (fileName.Length == 0 || outputFileName.Length == 0 || string.IsNullOrWhiteSpace(string.Empty + translateOption.SelectedItem) || translateOption.SelectedItem.ToString() == "Please Select")
 			{
-				MessageBox.Show(this,"Enter the input and output file names","Incomplete Data"); 
+				MessageBox.Show(this,"Enter the input and output file names and choose the translate option","Incomplete Data"); 
 				return;
 			}
 
@@ -333,7 +332,9 @@ namespace ResxTranslator
 			fileBrowseDlg.Title = "Select a File";
 			if(filetypeChoice == "resx")
 				fileBrowseDlg.Filter = "Resource Files|*.resx|XML Files|*.xml|All Files|*.*";
-			else
+            else if (filetypeChoice == "xml")
+                fileBrowseDlg.Filter = "XML Files|*.xml|All Files|*.*";
+            else
 				fileBrowseDlg.Filter = "JavaScript String Resource Files|*.js|All Files|*.*";
 			fileBrowseDlg.FilterIndex = 1;
 			if (fileBrowseDlg.ShowDialog() != DialogResult.Cancel)
@@ -486,15 +487,16 @@ namespace ResxTranslator
 		{
 			string strval = inputstring;
 			string translatedtxt = strval;
+            HttpUtils.LangPair lngPair = LangPair.SpanishToEnglish;
 			//Call translate
 			try
 			{
-				HttpUtils.LangPair lngPair=(HttpUtils.LangPair)Enum.Parse(typeof(HttpUtils.LangPair),this.langPairSelected ,true);
+				lngPair=(HttpUtils.LangPair)Enum.Parse(typeof(HttpUtils.LangPair),this.langPairSelected ,true);
 				translatedtxt =   HttpUtils.TranslateUtil.GetTranslatedText(strval,lngPair);
 			}
 			catch(Exception ex)
 			{
-				//Do Nothing for now
+                log.Error(string.Format("Unable to translate '{0}', '{1}'", strval, lngPair), ex);
 				string msg = ex.Message; 
 			}
 			return translatedtxt;
