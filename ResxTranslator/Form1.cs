@@ -300,7 +300,10 @@ namespace ResxTranslator
 				case "js":
 					TranslateJS();
 					break;
-				default:
+                case "xml":
+                    TranslateXml();
+                    break;
+                default:
 					break;
 			}
 			this.TranslateBtn.Text = "Translate";
@@ -314,7 +317,8 @@ namespace ResxTranslator
 			ArrayList allowedFileTypes = new ArrayList();
 			allowedFileTypes.Add("resx");
 			allowedFileTypes.Add("js");
-			this.fileType.DataSource = allowedFileTypes;
+            allowedFileTypes.Add("xml");
+            this.fileType.DataSource = allowedFileTypes;
 
 		}
 
@@ -339,50 +343,94 @@ namespace ResxTranslator
 
 		}
 
-		private void TranslateResx()
-		{
+        private void TranslateXml() 
+        {
 			string fileName = this.resxFileName.Text;
 			string outputFileName = this.outputFileName.Text;
-			//Load the resx file specified
-			
-			//To get the total no of resource strings to be translated (for
-			//progress bar) fastest way is to read resx as xml!
-			XmlDocument rootNode = new XmlDocument();
-			rootNode.Load(fileName);
-			XmlNodeList dataNodes = rootNode.SelectNodes("//root/data"); 
+
+            //To get the total no of resource strings to be translated (for
+            //progress bar) fastest way is to read resx as xml!
+            XmlDocument rootNode = new XmlDocument();
+            rootNode.Load(fileName);
+            XmlDocument doc2Translated = (XmlDocument)rootNode.Clone();
+
+            XmlNodeList dataNodes = doc2Translated.SelectNodes("//Value"); 
 			int totalStrings = dataNodes.Count;
 			ShowProgressDelegate showProgress =	new ShowProgressDelegate(ShowProgress);
 
-			// Create a ResXResourceReader for the file items.resx.
-			ResXResourceReader rsxr = new ResXResourceReader(fileName);
-            rsxr.BasePath = Path.GetDirectoryName(fileName);
-			ResXResourceWriter rsxTranslated = new ResXResourceWriter(outputFileName);
-			// Create an IDictionaryEnumerator to iterate through the resources.
-			IDictionaryEnumerator id = rsxr.GetEnumerator(); 
-			long count=0;
-			object[] pct;
-			pct = new object[1];
+            long count = 0;
+            object[] pct;
+            pct = new object[1];
 
 			// Iterate through the resources 
-			foreach (DictionaryEntry d in rsxr) 
+            foreach (XmlNode d in dataNodes) 
 			{
 				count++;
 				int percentTranslated = (int)(count*100/totalStrings);
 				pct[0]=percentTranslated;
 				this.Invoke(showProgress,pct);
 
-				string strval = d.Value.ToString();
+                string strval = d.InnerText;
                 log.Debug(string.Format("Translating '{0}'...", strval));
 				string translatedtxt = TranslateString(strval);
 				//Add translated string to the output resource files
                 log.Debug(string.Format("... got '{0}'", translatedtxt));
-                rsxTranslated.AddResource(d.Key.ToString(), translatedtxt); 
+                d.InnerText = translatedtxt;
 			}
 			//store back the resx file under the chosen language option
-			rsxTranslated.Generate();
-			rsxr.Close(); 
-			rsxTranslated.Close();
-		}
+
+            doc2Translated.Save(outputFileName);
+        }
+
+        private void TranslateResx()
+        {
+            string fileName = this.resxFileName.Text;
+            string outputFileName = this.outputFileName.Text;
+            //Load the resx file specified
+
+
+            //To get the total no of resource strings to be translated (for
+            //progress bar) fastest way is to read resx as xml!
+            XmlDocument rootNode = new XmlDocument();
+            rootNode.Load(fileName);
+            XmlNodeList dataNodes = rootNode.SelectNodes("//root/data");
+            int totalStrings = dataNodes.Count;
+            ShowProgressDelegate showProgress = new ShowProgressDelegate(ShowProgress);
+
+
+            // Create a ResXResourceReader for the file items.resx.
+            ResXResourceReader rsxr = new ResXResourceReader(fileName);
+            rsxr.BasePath = Path.GetDirectoryName(fileName);
+            ResXResourceWriter rsxTranslated = new ResXResourceWriter(outputFileName);
+            // Create an IDictionaryEnumerator to iterate through the resources.
+            IDictionaryEnumerator id = rsxr.GetEnumerator();
+            long count = 0;
+            object[] pct;
+            pct = new object[1];
+
+
+            // Iterate through the resources 
+            foreach (DictionaryEntry d in rsxr)
+            {
+                count++;
+                int percentTranslated = (int)(count * 100 / totalStrings);
+                pct[0] = percentTranslated;
+                this.Invoke(showProgress, pct);
+
+
+                string strval = d.Value.ToString();
+                log.Debug(string.Format("Translating '{0}'...", strval));
+                string translatedtxt = TranslateString(strval);
+                //Add translated string to the output resource files
+                log.Debug(string.Format("... got '{0}'", translatedtxt));
+                rsxTranslated.AddResource(d.Key.ToString(), translatedtxt);
+            }
+            //store back the resx file under the chosen language option
+            rsxTranslated.Generate();
+            rsxr.Close();
+            rsxTranslated.Close();
+        }
+
 
 		private void TranslateJS()
 		{
