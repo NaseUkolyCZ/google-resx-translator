@@ -21,7 +21,10 @@ namespace ResxTranslator
 	/// </summary>
 	public class Form1 : System.Windows.Forms.Form
 	{
-		private System.Windows.Forms.Label label1;
+        private static readonly log4net.ILog log = log4net.LogManager.GetLogger
+            (System.Reflection.MethodBase.GetCurrentMethod().DeclaringType); 
+        
+        private System.Windows.Forms.Label label1;
 		private System.Windows.Forms.Label label2;
 		private System.Windows.Forms.ComboBox translateOption;
 		private System.Windows.Forms.Button TranslateBtn;
@@ -209,14 +212,64 @@ namespace ResxTranslator
 		}
 		#endregion
 
+
+        private static DateTime RetrieveLinkerTimestamp()
+        {
+            DateTime dt = new DateTime(1970, 1, 1, 0, 0, 0);
+            try
+            {
+                string filePath = System.Reflection.Assembly.GetCallingAssembly().Location;
+                const int c_PeHeaderOffset = 60;
+                const int c_LinkerTimestampOffset = 8;
+                byte[] b = new byte[2048];
+                System.IO.Stream s = null;
+
+                try
+                {
+                    s = new System.IO.FileStream(filePath, System.IO.FileMode.Open, System.IO.FileAccess.Read);
+                    s.Read(b, 0, 2048);
+                }
+                finally
+                {
+                    if (s != null)
+                    {
+                        s.Close();
+                    }
+                }
+
+                int i = System.BitConverter.ToInt32(b, c_PeHeaderOffset);
+                int secondsSince1970 = System.BitConverter.ToInt32(b, i + c_LinkerTimestampOffset);
+
+                dt = dt.AddSeconds(secondsSince1970);
+                dt = dt.AddHours(System.TimeZone.CurrentTimeZone.GetUtcOffset(dt).Hours);
+                return dt;
+            }
+            catch (System.Exception ex)
+            {
+                log.Error("UnableToGetTheLinkerTimestamp", ex);
+                return dt;
+            }
+        }
+        
+
 		/// <summary>
 		/// The main entry point for the application.
 		/// </summary>
 		[STAThread]
 		static void Main() 
 		{
+            log4net.Config.XmlConfigurator.Configure();
+            log.Info(string.Format("Application Started, Version From '{0}'", RetrieveLinkerTimestamp()));
+
+            AppDomain currentDomain = AppDomain.CurrentDomain;
+            currentDomain.UnhandledException += currentDomain_UnhandledException;
 			Application.Run(new Form1());
 		}
+
+        static void currentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            log.Fatal(string.Format("UnhandledException,IsTerminating '{0}'", e.IsTerminating), e.ExceptionObject as System.Exception);
+        }
 
 
 		private void TranslateBtn_Click(object sender, System.EventArgs e)
@@ -319,9 +372,11 @@ namespace ResxTranslator
 				this.Invoke(showProgress,pct);
 
 				string strval = d.Value.ToString();
+                log.Debug(string.Format("Translating '{0}'...", strval));
 				string translatedtxt = TranslateString(strval);
 				//Add translated string to the output resource files
-				rsxTranslated.AddResource(d.Key.ToString(),translatedtxt ); 
+                log.Debug(string.Format("... got '{0}'", translatedtxt));
+                rsxTranslated.AddResource(d.Key.ToString(), translatedtxt); 
 			}
 			//store back the resx file under the chosen language option
 			rsxTranslated.Generate();
