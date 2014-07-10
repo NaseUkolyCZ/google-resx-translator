@@ -10,28 +10,29 @@ namespace HttpUtils
 	/// <summary>
 	/// Google Translation Utility Class (c)Peter A. Bromberg 2005
 	/// </summary>
-	
-	public  enum LangPair 
-	{
-	EnglishToGerman ,	
-	EnglishToSpanish ,	
-	EnglishToFrench ,	
-	EnglishToItalian ,	
-	EnglishToPortuguese,	
-	EnglishToJapanese,	
-	EnglishToKorean,	
-	EnglishToChineseSimplified,	
-	GermanToEnglish ,	
-	GermanToFrench,	
-	SpanishToEnglish,	
-	FrenchToEnglish,	
-	FrenchToGerman ,	
-	ItalianToEnglish,	
-	PortugueseToEnglish,	
-	JapaneseToEnglish,	
-	KoreanToEnglish,	
-	ChineseSimplifiedToEnglish
-	}
+
+    public enum LangPair
+    {
+        EnglishToGerman,
+        EnglishToSpanish,
+        EnglishToFrench,
+        EnglishToItalian,
+        EnglishToPortuguese,
+        EnglishToJapanese,
+        EnglishToKorean,
+        EnglishToChineseSimplified,
+        GermanToEnglish,
+        GermanToFrench,
+        SpanishToEnglish,
+        FrenchToEnglish,
+        FrenchToGerman,
+        ItalianToEnglish,
+        PortugueseToEnglish,
+        JapaneseToEnglish,
+        KoreanToEnglish,
+        ChineseSimplifiedToEnglish,
+        EnglishToCzech
+    }
 	
 
 	public class TranslateUtil
@@ -110,6 +111,9 @@ namespace HttpUtils
 				case (LangPair.SpanishToEnglish):
 					strLangPair = "es%7Cen";
 					break;
+                case (LangPair.EnglishToCzech):
+                    strLangPair = "en%7Ccz";
+                    break;
 				default:
 					strLangPair="en%7Cde";
 					break;

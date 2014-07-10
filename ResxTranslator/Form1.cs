@@ -302,6 +302,7 @@ namespace ResxTranslator
 
 			// Create a ResXResourceReader for the file items.resx.
 			ResXResourceReader rsxr = new ResXResourceReader(fileName);
+            rsxr.BasePath = Path.GetDirectoryName(fileName);
 			ResXResourceWriter rsxTranslated = new ResXResourceWriter(outputFileName);
 			// Create an IDictionaryEnumerator to iterate through the resources.
 			IDictionaryEnumerator id = rsxr.GetEnumerator(); 
